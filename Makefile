@@ -1,49 +1,52 @@
-# Compilateur
-CXX = g++
-# Options de compilation
-CXXFLAGS = -std=c++11 -Wall -Wextra -Werror
 
-# Répertoires
-SRC_DIR = lib/src
-INC_DIR = lib/inc
-TEST_DIR = lib/test
-BUILD_DIR = .
+NAME 		= 	matrix
 
-# Fichiers source
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRCS))
+FILES 		=	lib/test/vector_test.cpp	\
 
-# Nom de la bibliothèque
-LIB_NAME = matrix.a
-LIB_PATH = $(BUILD_DIR)/$(LIB_NAME)
+INCL_DIR	=	-I./lib/inc
 
-# Fichiers de test
-TEST_SRCS = $(wildcard $(TEST_DIR)/*.cpp)
-TEST_OBJS = $(patsubst $(TEST_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(TEST_SRCS))
-TEST_EXEC = $(BUILD_DIR)/unit_tests
+CC 			= 	c++
+CXXFLAGS 	= 	-std=c++11 -Wall -Wextra -Werror -g3
 
-# Dépendances
-LIB_DEPS = # Ajouter les dépendances externes si nécessaire
-TEST_DEPS = $(LIB_PATH) # Dépend de la bibliothèque
+OBJS_DIR	=	.objs
+OBJS 		= 	$(addprefix $(OBJS_DIR)/, $(notdir $(FILES:%.cpp=%.o)))
 
-.PHONY: all clean test
+DEP			=	$(addprefix $(OBJS_DIR)/, $(notdir $(FILES:%.cpp=%.d)))
 
-all: $(LIB_PATH) $(TEST_EXEC)
+$(OBJS_DIR)		:
+					@mkdir -p $(OBJS_DIR)
 
-$(LIB_PATH): $(OBJS)
-	ar rcs $@ $^
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -I$(INC_DIR) -c -o $@ $<
+# For Multiple Directory
+$(OBJS_DIR)/%.o	: 	lib/test/%.cpp
+					@printf "\033[0;33mGenerating matrix object... %-38.38s \r" $@
+					@$(CC) $(CXXFLAGS) -c $< -o $@ -MMD $(INCL_DIR)
 
-$(BUILD_DIR)/%.o: $(TEST_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -I$(INC_DIR) -c -o $@ $<
+# End Multiple Directory
 
-$(TEST_EXEC): $(TEST_OBJS)
-	$(CXX) $(CXXFLAGS) -I$(INC_DIR) -L$(BUILD_DIR) -o $@ $^ -lgtest -lpthread $(LIB_DEPS)
+all 			: 	$(NAME)
 
-test: $(TEST_EXEC)
-	$(TEST_EXEC)
+$(NAME)			: 	$(OBJS_DIR) $(OBJS)
+		      		@$(CC) $(CXXFLAGS) $(OBJS) -o $(NAME)
+					@echo "\033[1;32mMatrix: Done!\033[0m"
 
-clean:
-	rm -rf $(BUILD_DIR)
+clean			:
+		      		@rm -f $(OBJS)
+					@rm -rf $(OBJS_DIR)
+					@echo "\033[1;31mObject cleaned!\033[0m"
+
+fclean			:	
+					@rm -f $(OBJS)
+					@rm -rf $(OBJS_DIR)
+					@rm -f $(NAME)
+					@echo "\033[1;31mProgram and object cleaned!\033[0m"
+
+re				:	fclean all
+
+.PHONY			:
+					all test clean fclean re
+
+.SECONDEXPANSION:
+
+
+-include $(DEP)
